@@ -1,0 +1,582 @@
+def manage_drinks_and_bakery():
+    while True:  # เริ่มลูปไม่รู้จบ
+        print("=" * 30)
+        print("     จัดการเครื่องดื่มและเบเกอรี่")  # แสดงหัวข้อ
+        print("=" * 30)
+        print("1. เพิ่มข้อมูล")  # ตัวเลือกเพิ่มข้อมูล
+        print("2. แก้ไขข้อมูล")  # ตัวเลือกแก้ไขข้อมูล
+        print("3. ลบข้อมูล")  # ตัวเลือกลบข้อมูล
+        print("4. ออกรายงาน")  # ตัวเลือกออกรายงาน
+        print("5. กลับสู่เมนูหลัก")  # ตัวเลือกกลับไปที่เมนูหลัก
+        print("=" * 30)
+        choice = input("เลือก: ")  # รับการเลือกจากผู้ใช้
+
+        if choice == "1":
+            add_drink_or_bakery()  # เรียกฟังก์ชันเพิ่มข้อมูล
+        elif choice == "2":
+            edit_drink_or_bakery()  # เรียกฟังก์ชันแก้ไขข้อมูล
+        elif choice == "3":
+            delete_drink_or_bakery()  # เรียกฟังก์ชันลบข้อมูล
+        elif choice == "4":
+            report_drinks_and_bakery()  # เรียกฟังก์ชันออกรายงาน
+        elif choice == "5":
+            break  # ออกจากลูป
+        else:
+            print("กรุณาเลือกตัวเลือกที่ถูกต้อง!")  # แสดงข้อความผิดพลาด
+
+def summary_sales():
+    try:
+        total_sales = 0.0  # กำหนดยอดขายรวมเริ่มต้น
+        sales_summary = {}  # สร้างพจนานุกรมสำหรับสรุปยอดขาย
+
+        # อ่านข้อมูลการขายจากไฟล์ sales.txt
+        with open('sales.txt', mode='r', encoding='utf-8') as file:
+            for line in file:  # อ่านข้อมูลแต่ละบรรทัด
+                date, id_salesperson, id_item, quantity, total = line.strip().split('|')  # แยกข้อมูล
+                quantity = float(quantity)  # แปลงจำนวนเป็นตัวเลข
+                total = float(total)  # แปลงยอดรวมเป็นตัวเลข
+
+                # สะสมยอดขายรวม
+                total_sales += total
+
+                # สร้างสรุปยอดขายสำหรับวันนั้นหากยังไม่มี
+                if date not in sales_summary:
+                    sales_summary[date] = {}
+                
+                # สร้างข้อมูลพนักงานขายหากยังไม่มี
+                if id_salesperson not in sales_summary[date]:
+                    sales_summary[date][id_salesperson] = {"quantity": 0, "total": 0.0}
+
+                # อัปเดตจำนวนและยอดรวมสำหรับพนักงานขาย
+                sales_summary[date][id_salesperson]["quantity"] += quantity
+                sales_summary[date][id_salesperson]["total"] += total
+
+        # พิมพ์หัวข้อสรุป
+        print("\n                 Sales Summary")
+        print("=" * 50)
+        print(f"{'Date':<15} {'Salesperson ID':<15} {'Quantity':<10} {'Total':<10}")  # แสดงหัวตาราง
+        print("=" * 50)  # แสดงเส้นขีด
+
+        # พิมพ์สรุปยอดขาย
+        for date, salespersons in sales_summary.items():
+            for id_salesperson, details in salespersons.items():
+                quantity = f"{details['quantity']:.2f}"  # รูปแบบจำนวน
+                total = f"{details['total']:.2f}"  # รูปแบบยอดรวม
+                print(f"{date:<15} {id_salesperson:<15} {quantity:<10} {total:<10}")  # แสดงข้อมูล
+
+        # พิมพ์ยอดขายรวม
+        print("=" * 50)
+        print(f"{'Total Sales:':<40} {total_sales:.2f}")  # แสดงยอดขายรวม
+
+    except FileNotFoundError:
+        print("ไม่พบไฟล์ข้อมูลการขาย")  # ข้อความเมื่อไม่พบไฟล์
+
+def add_sales():
+    try:
+        # โหลดรายการสินค้าและราคาจาก drinks_bakery.txt
+        item_prices = {}
+        with open('drinks_bakery.txt', mode='r', encoding='utf-8') as file:
+            for line in file:  # อ่านข้อมูลแต่ละบรรทัด
+                id_item, name, category, price = line.strip().split('|')  # แยกข้อมูล
+                item_prices[id_item] = float(price)  # เก็บ ID และราคา
+
+        # โหลดข้อมูลพนักงานจาก salesperson.txt
+        salesperson_ids = set()  # สร้างชุดเก็บ ID พนักงาน
+        with open('salesperson.txt', mode='r', encoding='utf-8') as file:
+            for line in file:  # อ่านข้อมูลแต่ละบรรทัด
+                id_salesperson, name = line.strip().split('|')  # แยกข้อมูล
+                salesperson_ids.add(id_salesperson)  # เก็บ ID พนักงาน
+
+        # รับข้อมูลการขายจากผู้ใช้
+        date = input("วันที่ (DD/MM/YYYY): ")  # รับวันที่
+        id_salesperson = input("ID พนักงานขาย: ")  # รับ ID พนักงานขาย
+        
+        # ตรวจสอบว่า ID พนักงานขายถูกต้อง
+        if id_salesperson not in salesperson_ids:
+            print("ไม่พบ ID พนักงานขายนี้!")  # ข้อความเมื่อไม่พบ ID
+            return
+
+        id_item = input("ID เครื่องดื่ม/เบเกอรี่: ")  # รับ ID สินค้า
+        
+        # ตรวจสอบว่า ID สินค้าถูกต้อง
+        if id_item not in item_prices:
+            print("ไม่พบ ID เครื่องดื่ม/เบเกอรี่นี้!")  # ข้อความเมื่อไม่พบ ID สินค้า
+            return
+
+        quantity = float(input("จำนวน: "))  # รับจำนวน
+
+        # คำนวณยอดรวมโดยใช้ราคาสินค้าที่โหลดไว้
+        total = item_prices[id_item] * quantity
+
+        # บันทึกยอดขายลงใน sales.txt
+        with open('sales.txt', mode='a', encoding='utf-8') as file:
+            file.write(f"{date}|{id_salesperson}|{id_item}|{quantity}|{total}\n")  # เขียนข้อมูลลงไฟล์
+            print("บันทึกยอดขายสำเร็จ!")  # ข้อความเมื่อบันทึกสำเร็จ
+            print(f"ยอดรวมที่บันทึก: {total:.2f} บาท")  # แสดงยอดรวมที่บันทึก
+
+    except FileNotFoundError as e:
+        print(f"ไม่พบไฟล์ที่จำเป็น: {e}")  # ข้อความเมื่อไม่พบไฟล์
+    except ValueError:
+        print("กรุณาใส่ข้อมูลจำนวนในรูปแบบตัวเลข!")  # ข้อความเมื่อมีข้อผิดพลาดในการแปลงค่า
+
+def add_drink_or_bakery():
+    with open('drinks_bakery.txt', mode='a', encoding='utf-8') as file:
+        id_item = input("ID เครื่องดื่ม/เบเกอรี่: ")  # รับ ID สินค้า
+        name = input("ชื่อ: ")  # รับชื่อสินค้า
+        category = input("ประเภท (เครื่องดื่ม/เบเกอรี่): ")  # รับประเภทสินค้า
+        price = input("ราคา: ")  # รับราคา
+        file.write(f"{id_item}|{name}|{category}|{price}\n")  # เขียนข้อมูลลงไฟล์
+        print("เพิ่มข้อมูลสำเร็จ!")  # ข้อความเมื่อเพิ่มข้อมูลสำเร็จ
+
+def edit_drink_or_bakery():
+    id_item = input("กรุณาใส่ ID เครื่องดื่ม/เบเกอรี่ ที่ต้องการแก้ไข: ")  # รับ ID สำหรับแก้ไข
+    rows = []  # สร้างรายการสำหรับเก็บข้อมูล
+    found = False  # ตัวแปรตรวจสอบการค้นหา
+
+    with open('drinks_bakery.txt', mode='r', encoding='utf-8') as file:
+        for line in file:  # อ่านข้อมูลแต่ละบรรทัด
+            row = line.strip().split('|')  # แยกข้อมูล
+            if row[0] == id_item:  # ตรวจสอบว่า ID ตรงกันหรือไม่
+                found = True  # ตั้งค่าตรวจสอบเป็นจริง
+                print("ข้อมูลเดิม:", row)  # แสดงข้อมูลเดิม
+                name = input("ชื่อใหม่ (กด Enter เพื่อไม่เปลี่ยน): ") or row[1]  # รับชื่อใหม่
+                category = input("ประเภทใหม่ (กด Enter เพื่อไม่เปลี่ยน): ") or row[2]  # รับประเภทใหม่
+                price = input("ราคาใหม่ (กด Enter เพื่อไม่เปลี่ยน): ") or row[3]  # รับราคาใหม่
+                rows.append([id_item, name, category, price])  # เพิ่มข้อมูลที่แก้ไขลงในรายการ
+            else:
+                rows.append(row)  # เพิ่มข้อมูลที่ไม่เปลี่ยนแปลง
+
+    if found:
+        with open('drinks_bakery.txt', mode='w', encoding='utf-8') as file:
+            for row in rows:  # เขียนข้อมูลที่อัปเดตลงในไฟล์
+                file.write('|'.join(row) + '\n')  # เขียนข้อมูลแต่ละบรรทัด
+        print("แก้ไขข้อมูลสำเร็จ!")  # ข้อความเมื่อแก้ไขข้อมูลสำเร็จ
+    else:
+        print("ไม่พบ ID เครื่องดื่ม/เบเกอรี่นี้!")  # ข้อความเมื่อไม่พบ ID
+
+def delete_drink_or_bakery():
+    id_item = input("กรุณาใส่ ID เครื่องดื่ม/เบเกอรี่ ที่ต้องการลบ: ")  # รับ ID สำหรับลบ
+    rows = []  # สร้างรายการสำหรับเก็บข้อมูล
+    found = False  # ตัวแปรตรวจสอบการค้นหา
+
+    with open('drinks_bakery.txt', mode='r', encoding='utf-8') as file:
+        for line in file:  # อ่านข้อมูลแต่ละบรรทัด
+            row = line.strip().split('|')  # แยกข้อมูล
+            if row[0] == id_item:  # ตรวจสอบว่า ID ตรงกันหรือไม่
+                found = True  # ตั้งค่าตรวจสอบเป็นจริง
+                print("ข้อมูลที่จะลบ:", row)  # แสดงข้อมูลที่จะลบ
+            else:
+                rows.append(row)  # เพิ่มข้อมูลที่ไม่ถูกลบลงในรายการ
+
+    if found:
+        with open('drinks_bakery.txt', mode='w', encoding='utf-8') as file:
+            for row in rows:  # เขียนข้อมูลที่เหลืออยู่ลงในไฟล์
+                file.write('|'.join(row) + '\n')  # เขียนข้อมูลแต่ละบรรทัด
+        print("ลบข้อมูลสำเร็จ!")  # ข้อความเมื่อลบข้อมูลสำเร็จ
+    else:
+        print("ไม่พบ ID เครื่องดื่ม/เบเกอรี่นี้!")  # ข้อความเมื่อไม่พบ ID
+
+# ฟังก์ชันตั้งค่าความกว้างของคอลัมน์
+def set_column_widths():
+    return {
+        "id_width": 10,              # ความกว้างของคอลัมน์ ID
+        "header_id_width": 10,       # ความกว้างของหัวคอลัมน์ ID
+        "name_width": 17,            # ความกว้างของคอลัมน์ชื่อสินค้า
+        "header_name_width": 20,     # ความกว้างของหัวคอลัมน์ชื่อสินค้า
+        "header_category_width": 13, # ความกว้างของหัวคอลัมน์ประเภท
+        "category_bakery_width": 15, # ความกว้างของประเภทเบเกอรี่
+        "category_drink_width": 17,  # ความกว้างของประเภทเครื่องดื่ม
+        "price_width": 10,           # ความกว้างของคอลัมน์ราคา
+        "header_price_width": 10     # ความกว้างของหัวคอลัมน์ราคา
+    }
+
+# ฟังก์ชันพิมพ์เส้นขีดแนวนอนตามความกว้างของคอลัมน์
+def print_separator(widths):
+    # คำนวณความกว้างรวมของตาราง
+    total_width = (widths['header_id_width'] + widths['header_name_width'] +
+                   widths['header_category_width'] + widths['header_price_width'] + 13)
+    print("==============================================================")
+
+# ฟังก์ชันพิมพ์หัวตาราง
+def print_table_header(widths):
+    print_separator(widths)
+    print(f"| {'ID':<{widths['header_id_width']}} | {'ชื่อสินค้า':<{widths['header_name_width']}} | "
+          f"{'ประเภท':<{widths['header_category_width']}} | {'ราคา':>{widths['header_price_width']}} |")
+    print_separator(widths)
+
+# ฟังก์ชันพิมพ์ข้อมูลสินค้าในแต่ละแถว
+def print_table_row(id_item, name, category, price, widths):
+    # เลือกความกว้างของคอลัมน์ประเภทตามประเภทของสินค้า
+    category_width = (widths['category_bakery_width'] if category == "เบเกอรี่" 
+                      else widths['category_drink_width'])
+    print(f"| {id_item:<{widths['id_width']}} | {name:<{widths['name_width']}} | "
+          f"{category:<{category_width}} | {price:>{widths['price_width']}} |")
+
+# ฟังก์ชันพิมพ์รายงานข้อมูลเครื่องดื่มและเบเกอรี่
+def report_drinks_and_bakery():
+    widths = set_column_widths()  # กำหนดความกว้างของคอลัมน์
+
+    try:
+        with open('drinks_bakery.txt', mode='r', encoding='utf-8') as file:
+            print("\n                  ข้อมูลเครื่องดื่มและเบเกอรี่")  # หัวข้อรายงาน
+            print_table_header(widths)  # พิมพ์หัวตาราง
+
+            for line in file:
+                id_item, name, category, price = line.strip().split('|')
+                print_table_row(id_item, name, category, price, widths)  # พิมพ์ข้อมูลแต่ละแถว
+
+            print_separator(widths)  # ปิดท้ายตาราง
+
+    except FileNotFoundError:
+        print("ไม่พบไฟล์ drinks_bakery.txt")  # แสดงข้อความเมื่อไม่พบไฟล์
+
+
+
+# Placeholder functions for missing features
+def manage_salesperson():  # ฟังก์ชันสำหรับจัดการพนักงานขาย
+    while True:  # เริ่มต้นลูปไม่รู้จบ
+        print("=" * 30)
+        print("         จัดการพนักงานขาย")  # แสดงหัวข้อ
+        print("=" * 30)  # แสดงหัวข้อ
+        print("1. เพิ่มพนักงานขาย")  # ตัวเลือกเพิ่มพนักงานขาย
+        print("2. แก้ไขข้อมูลพนักงานขาย")  # ตัวเลือกแก้ไขข้อมูลพนักงานขาย
+        print("3. ลบพนักงานขาย")  # ตัวเลือกลบพนักงานขาย
+        print("4. แสดงรายชื่อพนักงานขาย")  # ตัวเลือกแสดงรายชื่อพนักงานขาย
+        print("5. กลับสู่เมนูหลัก")  # ตัวเลือกกลับสู่เมนูหลัก
+        print("=" * 30)
+        choice = input("เลือก: ")  # รับการเลือกจากผู้ใช้
+
+        if choice == "1":  # ถ้าผู้ใช้เลือกเพิ่มพนักงานขาย
+            add_salesperson()  # เรียกฟังก์ชันเพิ่มพนักงานขาย
+        elif choice == "2":  # ถ้าผู้ใช้เลือกแก้ไขข้อมูลพนักงานขาย
+            edit_salesperson()  # เรียกฟังก์ชันแก้ไขข้อมูลพนักงานขาย
+        elif choice == "3":  # ถ้าผู้ใช้เลือกลบพนักงานขาย
+            delete_salesperson()  # เรียกฟังก์ชันลบพนักงานขาย
+        elif choice == "4":  # ถ้าผู้ใช้เลือกแสดงรายชื่อพนักงานขาย
+            report_salesperson()  # เรียกฟังก์ชันแสดงรายชื่อพนักงานขาย
+        elif choice == "5":  # ถ้าผู้ใช้เลือกกลับสู่เมนูหลัก
+            break  # ออกจากลูป
+        else:  # ถ้าผู้ใช้เลือกตัวเลือกที่ไม่ถูกต้อง
+            print("กรุณาเลือกตัวเลือกที่ถูกต้อง!")  # แสดงข้อความผิดพลาด
+
+def add_salesperson():  # ฟังก์ชันเพื่อเพิ่มพนักงานขาย
+    with open('salesperson.txt', mode='a', encoding='utf-8') as file:  # เปิดไฟล์ salesperson.txt ในโหมดเพิ่ม
+        id_salesperson = input("ID พนักงานขาย: ")  # รับ ID ของพนักงานขายจากผู้ใช้
+        name = input("ชื่อพนักงาน: ")  # รับชื่อพนักงานขายจากผู้ใช้
+        file.write(f"{id_salesperson}|{name}\n")  # เขียนข้อมูลพนักงานขายลงในไฟล์
+        print("เพิ่มพนักงานขายสำเร็จ!")  # แสดงข้อความยืนยันการเพิ่มพนักงานขาย
+
+def edit_salesperson():  # ฟังก์ชันเพื่อแก้ไขข้อมูลพนักงานขาย
+    id_salesperson = input("กรุณาใส่ ID พนักงานขาย ที่ต้องการแก้ไข: ")  # รับ ID ที่ต้องการแก้ไขจากผู้ใช้
+    rows = []  # สร้างรายการเก็บข้อมูล
+    found = False  # ตัวแปรเช็คการพบ ID
+
+    with open('salesperson.txt', mode='r', encoding='utf-8') as file:  # เปิดไฟล์ salesperson.txt ในโหมดอ่าน
+        for line in file:  # วนลูปผ่านแต่ละบรรทัดในไฟล์
+            row = line.strip().split('|')  # แยกข้อมูลในแต่ละบรรทัด
+            if row[0] == id_salesperson:  # ถ้าพบ ID ที่ต้องการแก้ไข
+                found = True  # ตั้งค่าตัวแปรว่าเจอ ID แล้ว
+                print("ข้อมูลเดิม:", row)  # แสดงข้อมูลเดิม
+                name = input("ชื่อใหม่ (กด Enter เพื่อไม่เปลี่ยน): ") or row[1]  # รับชื่อใหม่จากผู้ใช้ หรือเก็บชื่อเดิม
+                rows.append([id_salesperson, name])  # เพิ่มข้อมูลที่แก้ไขแล้วลงในรายการ
+            else:  # ถ้าไม่พบ ID ที่ต้องการแก้ไข
+                rows.append(row)  # เพิ่มข้อมูลเดิมลงในรายการ
+
+    if found:  # ถ้าพบ ID ที่ต้องการแก้ไข
+        with open('salesperson.txt', mode='w', encoding='utf-8') as file:  # เปิดไฟล์ salesperson.txt ในโหมดเขียน
+            for row in rows:  # วนลูปผ่านรายการข้อมูล
+                file.write('|'.join(row) + '\n')  # เขียนข้อมูลที่แก้ไขลงในไฟล์
+        print("แก้ไขข้อมูลพนักงานขายสำเร็จ!")  # แสดงข้อความยืนยันการแก้ไขข้อมูล
+    else:  # ถ้าไม่พบ ID ที่ต้องการแก้ไข
+        print("ไม่พบ ID พนักงานขาย!")  # แสดงข้อความผิดพลาด
+
+def delete_salesperson():  # ฟังก์ชันเพื่อปิดการขายพนักงาน
+    id_salesperson = input("กรุณาใส่ ID พนักงานขาย ที่ต้องการลบ: ")  # รับ ID ที่ต้องการลบจากผู้ใช้
+    rows = []  # สร้างรายการเก็บข้อมูล
+    found = False  # ตัวแปรเช็คการพบ ID
+
+    with open('salesperson.txt', mode='r', encoding='utf-8') as file:  # เปิดไฟล์ salesperson.txt ในโหมดอ่าน
+        for line in file:  # วนลูปผ่านแต่ละบรรทัดในไฟล์
+            row = line.strip().split('|')  # แยกข้อมูลในแต่ละบรรทัด
+            if row[0] != id_salesperson:  # ถ้า ID ไม่ตรงกับที่ต้องการลบ
+                rows.append(row)  # เพิ่มข้อมูลเดิมลงในรายการ
+            else:  # ถ้าพบ ID ที่ต้องการลบ
+                found = True  # ตั้งค่าตัวแปรว่าเจอ ID แล้ว
+
+    if found:  # ถ้าพบ ID ที่ต้องการลบ
+        with open('salesperson.txt', mode='w', encoding='utf-8') as file:  # เปิดไฟล์ salesperson.txt ในโหมดเขียน
+            for row in rows:  # วนลูปผ่านรายการข้อมูล
+                file.write('|'.join(row) + '\n')  # เขียนข้อมูลที่เหลืออยู่ลงในไฟล์
+        print("ลบพนักงานขายสำเร็จ!")  # แสดงข้อความยืนยันการลบพนักงานขาย
+    else:  # ถ้าไม่พบ ID ที่ต้องการลบ
+        print("ไม่พบ ID พนักงานขาย!")  # แสดงข้อความผิดพลาด
+
+def report_salesperson():  # ฟังก์ชันเพื่อรายงานข้อมูลพนักงานขาย
+    try:  # เริ่มต้นบล็อก try เพื่อจับข้อผิดพลาด
+        with open('salesperson.txt', mode='r', encoding='utf-8') as file:  # เปิดไฟล์ salesperson.txt ในโหมดอ่าน
+            print("\n     ข้อมูลพนักงานขาย")
+            print("=" * 30)  # แสดงหัวข้อรายงาน
+            print(f"{'ID':<10} {'ชื่อพนักงาน':<20}")  # แสดงหัวตาราง
+            print("=" * 30)  # แสดงเส้นขีดเป็นตัวแบ่ง
+            for line in file:  # วนลูปผ่านแต่ละบรรทัดในไฟล์
+                id_salesperson, name = line.strip().split('|')  # แยกข้อมูลในแต่ละบรรทัด
+                print(f"{id_salesperson:<10} {name:<20}")  # แสดงข้อมูลพนักงานขายในรูปแบบตาราง
+            print("=" * 30)
+    except FileNotFoundError:  # ถ้าไม่พบไฟล์
+        print("ไม่พบไฟล์ salesperson.txt")  # แสดงข้อความผิดพลาด
+
+def summary_sales_by_salesperson():  # ฟังก์ชันเพื่อสรุปยอดขายตามพนักงานขาย
+    try:  # เริ่มต้นบล็อก try เพื่อจับข้อผิดพลาด
+        # กำหนดโครงสร้างข้อมูลเริ่มต้น
+        salesperson_summary = {}  # สรุปข้อมูลยอดขายของพนักงานขาย
+        total_sales_by_salesperson = {}  # ยอดขายรวมตามพนักงานขาย
+
+        # โหลดประเภทสินค้า จาก drinks_bakery.txt
+        item_types = {}  # กำหนดโครงสร้างข้อมูลสำหรับประเภทสินค้า
+        with open('drinks_bakery.txt', mode='r', encoding='utf-8') as file:  # เปิดไฟล์ drinks_bakery.txt ในโหมดอ่าน
+            for line in file:  # วนลูปผ่านแต่ละบรรทัดในไฟล์
+                id_item, name, category, price = line.strip().split('|')  # แยกข้อมูลในแต่ละบรรทัด
+                item_types[id_item] = (category, float(price))  # เก็บข้อมูลประเภทและราคาไว้ตาม ID สินค้า
+
+        # อ่านข้อมูลการขายจาก sales.txt
+        with open('sales.txt', mode='r', encoding='utf-8') as file:  # เปิดไฟล์ sales.txt ในโหมดอ่าน
+            for line in file:  # วนลูปผ่านแต่ละบรรทัดในไฟล์
+                date, id_salesperson, id_item, quantity, total = line.strip().split('|')  # แยกข้อมูลในแต่ละบรรทัด
+                quantity = float(quantity)  # แปลงจำนวนเป็นชนิดข้อมูล float
+                total = float(total)  # แปลงยอดรวมเป็นชนิดข้อมูล float
+
+                # ดึงประเภทสินค้าและราคา
+                category, price = item_types.get(id_item, ('Unknown', 0.0))  # รับประเภทและราคาโดยใช้ ID สินค้า
+
+                # กำหนดค่าพนักงานขายถ้ายังไม่มีการกำหนด
+                if id_salesperson not in salesperson_summary:  # ถ้า ID พนักงานขายยังไม่มีในสรุป
+                    salesperson_summary[id_salesperson] = {}  # สร้างรายการใหม่สำหรับพนักงานขาย
+                    total_sales_by_salesperson[id_salesperson] = 0.0  # กำหนดยอดขายรวมเป็น 0
+
+                # กำหนดประเภทสินค้าถ้ายังไม่มีการกำหนด
+                if category not in salesperson_summary[id_salesperson]:  # ถ้าประเภทสินค้ายังไม่มีในสรุปของพนักงานขาย
+                    salesperson_summary[id_salesperson][category] = {"quantity": 0, "total": 0.0}  # สร้างรายการใหม่สำหรับประเภทสินค้า
+
+                # อัปเดตจำนวนและยอดรวมสำหรับประเภทสินค้า
+                salesperson_summary[id_salesperson][category]["quantity"] += quantity  # เพิ่มจำนวนสินค้า
+                salesperson_summary[id_salesperson][category]["total"] += total  # เพิ่มยอดรวม
+                total_sales_by_salesperson[id_salesperson] += total  # เพิ่มยอดรวมของพนักงานขาย
+
+        # สร้างเลย์เอาต์ตารางด้วยตนเอง
+        column_widths = [15, 15, 15, 15]  # ปรับความกว้างคอลัมน์สำหรับเลย์เอาต์
+        separator = "+" + "-" * column_widths[0] + "+" + "-" * column_widths[1] + "+" + "-" * column_widths[2] + "+" + "-" * column_widths[3] + "+"  # สร้างเส้นขีดแบ่ง
+
+        # แสดงหัวตาราง
+        print("\n=== Sales Summary by Salesperson ===")  # แสดงหัวข้อรายงานยอดขาย
+        print(separator)  # แสดงเส้นขีดแบ่ง
+        print(f"| {'Salesperson ID':<{column_widths[0]}} | {'Category':<{column_widths[1]}} | {'Quantity':<{column_widths[2]}} | {'Total':<{column_widths[3]}} |")  # แสดงหัวตาราง
+        print(separator)  # แสดงเส้นขีดแบ่ง
+
+        # แสดงข้อมูลของแต่ละพนักงานขาย
+        for id_salesperson, categories in salesperson_summary.items():  # วนลูปผ่านข้อมูลของพนักงานขาย
+            for category, details in categories.items():  # วนลูปผ่านข้อมูลประเภทสินค้า
+                quantity = f"{details['quantity']:.2f}"  # จัดรูปแบบจำนวนสินค้าให้มี 2 ตำแหน่งทศนิยม
+                total = f"{details['total']:.2f}"  # จัดรูปแบบยอดรวมให้มี 2 ตำแหน่งทศนิยม
+                print(f"| {id_salesperson:<{column_widths[0]}} | {category:<{column_widths[1]}} | {quantity:<{column_widths[2]}} | {total:<{column_widths[3]}} |")  # แสดงข้อมูลในรูปแบบตาราง
+            print(separator)  # แสดงเส้นขีดแบ่ง
+            # แสดงยอดขายรวมของพนักงานขายในบรรทัดเดียว
+            total_salesperson = f"{total_sales_by_salesperson[id_salesperson]:.2f}"  # คำนวณยอดขายรวมสำหรับพนักงานขาย
+            print(f"| {id_salesperson:<{column_widths[0]}} | {'Total Sales':<{column_widths[1]}} | {'-':<{column_widths[2]}} | {total_salesperson:<{column_widths[3]}} |")  # แสดงยอดขายรวม
+            print(separator)  # แสดงเส้นขีดแบ่ง
+
+    except FileNotFoundError:  # ถ้าไม่พบไฟล์
+        print("ไม่พบไฟล์ข้อมูลการขายหรือรายการสินค้า")  # แสดงข้อความผิดพลาด
+
+# ฟังก์ชันตั้งค่าความกว้างของคอลัมน์
+def summary_sales_by_item():  # ฟังก์ชันเพื่อสรุปยอดขายตามสินค้า
+    try:  # เริ่มต้นบล็อก try เพื่อจับข้อผิดพลาด
+        # กำหนดโครงสร้างข้อมูลเริ่มต้น
+        item_summary = {}  # สรุปข้อมูลยอดขายของสินค้า
+        total_drink_sales = 0.0  # ยอดขายรวมของเครื่องดื่ม
+        total_bakery_sales = 0.0  # ยอดขายรวมของเบเกอรี่
+        total_combined_sales = 0.0  # ยอดขายรวมของทั้งเครื่องดื่มและเบเกอรี่
+
+        # โหลดประเภทสินค้า จาก drinks_bakery.txt
+        item_types = {}  # กำหนดโครงสร้างข้อมูลสำหรับประเภทสินค้า
+        with open('drinks_bakery.txt', mode='r', encoding='utf-8') as file:  # เปิดไฟล์ drinks_bakery.txt ในโหมดอ่าน
+            for line in file:  # วนลูปผ่านแต่ละบรรทัดในไฟล์
+                id_item, name, category, price = line.strip().split('|')  # แยกข้อมูลในแต่ละบรรทัด
+                item_types[id_item] = (name, category)  # เก็บข้อมูลชื่อและประเภทของสินค้าไว้ตาม ID สินค้า
+
+        # อ่านข้อมูลการขายจาก sales.txt
+        with open('sales.txt', mode='r', encoding='utf-8') as file:  # เปิดไฟล์ sales.txt ในโหมดอ่าน
+            for line in file:  # วนลูปผ่านแต่ละบรรทัดในไฟล์
+                date, id_salesperson, id_item, quantity, total = line.strip().split('|')  # แยกข้อมูลในแต่ละบรรทัด
+                quantity = float(quantity)  # แปลงจำนวนเป็นชนิดข้อมูล float
+                total = float(total)  # แปลงยอดรวมเป็นชนิดข้อมูล float
+
+                # ดึงชื่อและประเภทของสินค้า
+                name, category = item_types.get(id_item, ('Unknown', 'Unknown'))  # รับชื่อและประเภทโดยใช้ ID สินค้า
+
+                # กำหนดข้อมูลสินค้าถ้ายังไม่มีการกำหนด
+                if id_item not in item_summary:  # ถ้า ID สินค้ายังไม่มีในสรุป
+                    item_summary[id_item] = {"name": name, "category": category, "quantity": 0, "total": 0.0}  # สร้างรายการใหม่สำหรับสินค้า
+
+                # อัปเดตจำนวนและยอดรวมสำหรับสินค้า
+                item_summary[id_item]["quantity"] += quantity  # เพิ่มจำนวนสินค้า
+                item_summary[id_item]["total"] += total  # เพิ่มยอดรวม
+
+                # อัปเดตยอดขายรวมตามประเภทสินค้า
+                if category == 'เครื่องดื่ม':  # ถ้าประเภทเป็นเครื่องดื่ม
+                    total_drink_sales += total  # เพิ่มยอดขายเครื่องดื่ม
+                elif category == 'เบเกอรี่':  # ถ้าประเภทเป็นเบเกอรี่
+                    total_bakery_sales += total  # เพิ่มยอดขายเบเกอรี่
+
+        # คำนวณยอดขายรวม
+        total_combined_sales = total_drink_sales + total_bakery_sales  # คำนวณยอดขายรวมของทั้งสองประเภท
+
+        # แสดงหัวตารางสรุป
+        print("\n                  Sales Summary by Item")
+        print("=" * 65)# แสดงหัวข้อรายงานยอดขายสินค้า
+        print(f"{'Item ID':<10} {'Name':<17} {'Category':<15} {'Quantity':<10} {'Total':<10}")  # แสดงหัวตาราง
+        print("=" * 65)  # แสดงเส้นขีดแบ่ง
+
+        # แสดงสรุปยอดขาย
+        for id_item, details in item_summary.items():  # วนลูปผ่านข้อมูลสินค้า
+            name = details["name"]  # ดึงชื่อสินค้า
+            category = details["category"]  # ดึงประเภทสินค้า
+            quantity = f"{details['quantity']:.2f}"  # จัดรูปแบบจำนวนสินค้าให้มี 2 ตำแหน่งทศนิยม
+            total = f"{details['total']:.2f}"  # จัดรูปแบบยอดรวมให้มี 2 ตำแหน่งทศนิยม
+            print(f"{id_item:<10} {name:<18} {category:<20} {quantity:<10} {total:<10}")  # แสดงข้อมูลในรูปแบบตาราง
+
+        # แสดงยอดรวมของเครื่องดื่ม, เบเกอรี่ และยอดรวมทั้งหมด
+        print("=" * 65)  # แสดงเส้นขีดแบ่ง
+        print(f"{'Total Drink Sales :':<40} {total_drink_sales:.2f}")  # แสดงยอดขายรวมเครื่องดื่ม
+        print(f"{'Total Bakery Sales :':<40} {total_bakery_sales:.2f}")  # แสดงยอดขายรวมเบเกอรี่
+        print(f"{'Total All Sales :':<40} {total_combined_sales:.2f}")  # แสดงยอดขายรวมทั้งหมด
+
+    except FileNotFoundError:  # ถ้าไม่พบไฟล์
+        print("ไม่พบไฟล์ข้อมูลการขายหรือรายการสินค้า")  # แสดงข้อความผิดพลาด
+
+
+# กำหนดอัตราค่าคอมมิชชั่นเริ่มต้น
+COMMISSION_RATE = 0.05  # 5% ค่าคอมมิชชั่น
+
+def set_commission_rate():  # ฟังก์ชันเพื่อกำหนดอัตราค่าคอมมิชชั่นใหม่
+    global COMMISSION_RATE  # ประกาศตัวแปร COMMISSION_RATE ให้สามารถเข้าถึงได้ทั่วทั้งโมดูล
+    try:  # เริ่มต้นบล็อก try เพื่อจับข้อผิดพลาด
+        new_rate = float(input("Enter new commission rate : "))  # รับค่าอัตราค่าคอมมิชชั่นใหม่จากผู้ใช้
+        COMMISSION_RATE = new_rate  # อัปเดตค่า COMMISSION_RATE
+        print(f"Commission rate updated to {COMMISSION_RATE * 100:.2f}%")  # แสดงผลอัตราค่าคอมมิชชั่นที่อัปเดตแล้ว
+        
+        # คำนวณค่าคอมมิชชั่นจากยอดขายของพนักงาน
+        calculate_commission_by_salesperson()  # เรียกฟังก์ชันเพื่อคำนวณค่าคอมมิชชั่นจากยอดขายของพนักงาน
+        
+    except ValueError:  # ถ้ามีข้อผิดพลาดในการแปลงข้อมูล
+        print("Invalid input. Please enter a valid number.")  # แสดงข้อความผิดพลาด
+
+def calculate_commission_by_salesperson():  # ฟังก์ชันเพื่อคำนวณค่าคอมมิชชั่นตามพนักงานขาย
+    total_commissions = {}  # กำหนดโครงสร้างข้อมูลสำหรับค่าคอมมิชชั่นรวมของพนักงานขาย
+    
+    try:  # เริ่มต้นบล็อก try เพื่อจับข้อผิดพลาด
+        with open('sales.txt', mode='r', encoding='utf-8') as file:  # เปิดไฟล์ sales.txt ในโหมดอ่าน
+            for line in file:  # วนลูปผ่านแต่ละบรรทัดในไฟล์
+                _, id_salesperson, _, _, total = line.strip().split('|')  # แยกข้อมูลในแต่ละบรรทัด
+                total = float(total)  # แปลงยอดรวมเป็นชนิดข้อมูล float
+
+                # กำหนดค่าคอมมิชชั่นให้กับพนักงานขายถ้ายังไม่มีการกำหนด
+                if id_salesperson not in total_commissions:  # ถ้า ID พนักงานขายยังไม่มีในสรุป
+                    total_commissions[id_salesperson] = 0.0  # สร้างรายการใหม่สำหรับพนักงานขาย
+                
+                # คำนวณค่าคอมมิชชั่น
+                total_commissions[id_salesperson] += total * COMMISSION_RATE  # เพิ่มค่าคอมมิชชั่นของพนักงานขาย
+
+        # แสดงผลสรุปค่าคอมมิชชั่นตามพนักงานขาย
+        print("\n Commission Summary by Salesperson")  # แสดงหัวข้อรายงานค่าคอมมิชชั่น
+        print("=" * 35)
+        print(f"{'Salesperson ID':<15} {'Total Commission':<15}")  # แสดงหัวตาราง
+        print("=" * 35)  # แสดงเส้นขีดแบ่ง
+        
+        for id_salesperson, commission in total_commissions.items():  # วนลูปผ่านข้อมูลค่าคอมมิชชั่น
+            print(f"{id_salesperson:<15} {commission:<15.2f}")  # แสดงข้อมูลในรูปแบบตาราง
+
+    except FileNotFoundError:  # ถ้าไม่พบไฟล์
+        print("ไม่พบไฟล์ sales.txt")  # แสดงข้อความผิดพลาด
+
+def summary_sales_by_salesperson():  # ฟังก์ชันเพื่อสรุปยอดขายตามพนักงานขาย
+    total_sales = {}  # กำหนดโครงสร้างข้อมูลสำหรับยอดขายรวมของพนักงานขาย
+    salesperson_names = {}  # กำหนดโครงสร้างข้อมูลสำหรับชื่อพนักงานขาย
+
+    # โหลดชื่อพนักงานจากไฟล์ salesperson.txt
+    try:  
+        with open('salesperson.txt', mode='r', encoding='utf-8') as file:  # เปิดไฟล์ salesperson.txt ในโหมดอ่าน
+            for line in file:  # วนลูปผ่านแต่ละบรรทัดในไฟล์
+                id_salesperson, name = line.strip().split('|')  # แยกข้อมูลในแต่ละบรรทัด
+                salesperson_names[id_salesperson] = name  # เก็บ ID และชื่อพนักงาน
+
+    except FileNotFoundError:  # ถ้าไม่พบไฟล์
+        print("ไม่พบไฟล์ salesperson.txt")  # แสดงข้อความผิดพลาด
+        return  # ออกจากฟังก์ชัน
+
+    # คำนวณยอดขายตามพนักงาน
+    try:  
+        with open('sales.txt', mode='r', encoding='utf-8') as file:  # เปิดไฟล์ sales.txt ในโหมดอ่าน
+            for line in file:  # วนลูปผ่านแต่ละบรรทัดในไฟล์
+                date, id_salesperson, id_item, quantity, total = line.strip().split('|')  # แยกข้อมูลในแต่ละบรรทัด
+                total = float(total)  # แปลงยอดรวมเป็นชนิดข้อมูล float
+
+                # กำหนดยอดขายให้กับพนักงานขายถ้ายังไม่มีการกำหนด
+                if id_salesperson not in total_sales:  # ถ้า ID พนักงานขายยังไม่มีในสรุป
+                    total_sales[id_salesperson] = 0.0  # สร้างรายการใหม่สำหรับพนักงานขาย
+
+                total_sales[id_salesperson] += total  # เพิ่มยอดขายรวมให้กับพนักงานขาย
+
+        # แสดงผลสรุปยอดขายตามพนักงาน
+        print("\n          Summary Sales by Salesperson")
+        print("=" * 50)# แสดงหัวข้อรายงานยอดขาย
+        print(f"{'Salesperson ID':<15} {'Name':<20} {'Total Sales':<10}")  # แสดงหัวตาราง
+        print("=" * 50)  # แสดงเส้นขีดแบ่ง
+
+        for id_salesperson, sales in total_sales.items():  # วนลูปผ่านข้อมูลยอดขาย
+            name = salesperson_names.get(id_salesperson, "Unknown")  # จับคู่ชื่อพนักงาน
+            print(f"{id_salesperson:<15} {name:<20} {sales:<10.2f}")  # แสดงข้อมูลในรูปแบบตาราง
+
+    except FileNotFoundError:  # ถ้าไม่พบไฟล์
+        print("ไม่พบไฟล์ sales.txt")  # แสดงข้อความผิดพลาด
+
+# Update the main program loop to include the option to set the commission rate
+def main():  # ฟังก์ชันหลัก
+    while True:  # เริ่มต้นลูป
+        print("\n")
+        print("=" * 40)
+        print("                 เมนูหลัก")
+        print("=" * 40)# แสดงเมนูหลัก
+        print("1. จัดการเครื่องดื่มและเบเกอรี่")  # ตัวเลือกการจัดการเครื่องดื่มและเบเกอรี่
+        print("2. จัดการพนักงานขาย")  # ตัวเลือกการจัดการพนักงานขาย
+        print("3. เพิ่มยอดขาย")  # ตัวเลือกการเพิ่มยอดขาย
+        print("4. แสดงสรุปยอดขายรายวัน")  # ตัวเลือกการแสดงสรุปยอดขายรายวัน
+        print("5. แสดงสรุปยอดขายตามพนักงาน")  # ตัวเลือกการแสดงสรุปยอดขายตามพนักงาน
+        print("6. แสดงสรุปยอดขายตามข้อมูลเครื่องดื่มและเบเกอรี่")  # ตัวเลือกการแสดงสรุปยอดขายตามข้อมูลเครื่องดื่มและเบเกอรี่
+        print("7. ตั้งค่าอัตราค่าคอมมิชชั่น")  # ตัวเลือกการตั้งค่าอัตราค่าคอมมิชชั่น
+        print("8. ออกจากโปรแกรม")  # ตัวเลือกออกจากโปรแกรม
+        print("=" * 40)
+        choice = input("เลือก: ")  # รับตัวเลือกจากผู้ใช้
+
+        # ตรวจสอบตัวเลือกที่ผู้ใช้เลือก
+        if choice == "1":  
+            manage_drinks_and_bakery()  # เรียกฟังก์ชันจัดการเครื่องดื่มและเบเกอรี่
+        elif choice == "2":  
+            manage_salesperson()  # เรียกฟังก์ชันจัดการพนักงานขาย
+        elif choice == "3":  
+            add_sales()  # เรียกฟังก์ชันเพิ่มยอดขาย
+        elif choice == "4":  
+            summary_sales()  # เรียกฟังก์ชันแสดงสรุปยอดขายรายวัน
+        elif choice == "5":  
+            summary_sales_by_salesperson()  # เรียกฟังก์ชันแสดงสรุปยอดขายตามพนักงาน
+        elif choice == "6":  # เรียกฟังก์ชันแสดงสรุปยอดขายตามข้อมูลเครื่องดื่มและเบเกอรี่
+            summary_sales_by_item()  
+        elif choice == "7":  # ตั้งค่าอัตราค่าคอมมิชชั่น
+            set_commission_rate()  
+        elif choice == "8":  
+            print("ออกจากโปรแกรม...")  # แสดงข้อความออกจากโปรแกรม
+            break  # ออกจากลูป
+        else:  
+            print("กรุณาเลือกตัวเลือกที่ถูกต้อง!")  # แสดงข้อความหากผู้ใช้เลือกไม่ถูกต้อง
+
+if __name__ == "__main__":  # ถ้าไฟล์นี้ถูกเรียกใช้เป็นโปรแกรมหลัก
+    main()  # เรียกฟังก์ชันหลัก
